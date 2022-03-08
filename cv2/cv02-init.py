@@ -21,17 +21,21 @@ hrnek = cv2.imread('/home/garo/Desktop/UZO-2022/cv2/cv02_vzor_hrnecek.bmp')
 
 # new(y,x) = hist(H(y,x))
 # This is correct 
-hrnekX = hrnek[1] / 2
-hrnekY = hrnek[0] / 2
+hrnekX = hrnek[1]
+hrnekY = hrnek[0]
 hsv = cv2.cvtColor(hrnek, cv2.COLOR_RGB2HSV)
 hist, b = np.histogram(hsv[:,:,0], 256, (0, 256))
 hist1 = hist.astype(float)
-maxH = np.max(hist)
-hist1 /= maxH
-print(hist1)
-id = 0
-type(hrnekX)
+plt.hist(hist, b)
+plt.show()
 
+maxH = np.max(hist)
+minH = np.min(hist)
+maxG = np.max(b)
+minG = np.min(b)
+
+hist1 /= maxH
+id = 0
 # Tento while je pro druhej a treti snimek
 while True:
     ret, bgr = cap.read()
@@ -40,17 +44,17 @@ while True:
     hsv = cv2.cvtColor(bgr, cv2.COLOR_RGB2HSV)
     hist, b = np.histogram(hsv[:,:,0], 256, (0, 256))
     # X a Y potreba dopocitat v algoritmu, dosadit
-    
     #velikost ctverce
-    x1 = hrnekX
-    y1 = maxH
+    
+    x1 = maxH
+    y1 = maxG
 
     # Pozice ctverce
-    x2 = 100
-    y2 = 100
-    cv2.rectangle(bgr, (x1, y1), (x2, y2), (0, 255, 0))
+    x2 = minH
+    y2 = minH
+    #cv2.rectangle(bgr, (x1, y1), (x2, y2), (0, 255, 0))
     cv2.imshow('Image', bgr)
-    key = 0xFF & cv2.waitKey(30)
+    key = 0xFF & cv2.waitKey(0)
     if key == 27:
         break
 cv2.destroyAllWindows()
