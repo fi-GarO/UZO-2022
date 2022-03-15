@@ -2,12 +2,13 @@ import cv2
 import numpy as np
 
 img = cv2.imread('/home/garo/Desktop/UZO-2022/cv2/cv02_vzor_hrnecek.bmp')
+print('Original Dimensions : ', img.shape)
 
-roi = img[20: 300, 10: 150]
-x = 320
-y = 100
+roi = img[20: 145, 10: 104]
+x = 260
+y = 120
 width = 150
-height = 150 
+height = 150
 hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
 roi_hist = cv2.calcHist([hsv_roi], [0], None, [180], [0, 180])
 
