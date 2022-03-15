@@ -1,51 +1,51 @@
 import cv2
 import numpy as np
-import statistics as s 
 
-def nothing(x):
-    pass
+img = cv2.imread('/home/garo/Desktop/UZO-2022/cv2/cv02_vzor_hrnecek.bmp')
+print('Original Dimensions : ', img.shape)
+
+roi = img[20: 145, 10: 104]
+x = 260
+y = 157
+width = 150
+height = 170
+hsv_roi = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+roi_hist = cv2.calcHist([hsv_roi], [0], None, [180], [0, 180])
 
 cap = cv2.VideoCapture('cv02_hrnecek.mp4')
 
-cv2.namedWindow("Tracking")
-cv2.createTrackbar("LH", "Tracking", 0, 255, nothing)
-cv2.createTrackbar("LS", "Tracking", 0, 50, nothing)
-cv2.createTrackbar("LV", "Tracking", 0, 50, nothing)
-cv2.createTrackbar("UH", "Tracking", 10, 255, nothing)
-cv2.createTrackbar("US", "Tracking", 255, 255, nothing)
-cv2.createTrackbar("UV", "Tracking", 255, 255, nothing)
+term_criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
 
-while True:
-    #frame = cv2.imread('smarties.png')
+while True: 
     _, frame = cap.read()
-
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+    
+    ret, track_window = cv2.CamShift(mask, (x, y, width, height), term_criteria)
+    x = track_window[0]
+    y = track_window[1]
+    
+    #width = track_window[2]
+    #height = track_window[3]
 
-    l_h = cv2.getTrackbarPos("LH", "Tracking")
-    l_s = cv2.getTrackbarPos("LS", "Tracking")
-    l_v = cv2.getTrackbarPos("LV", "Tracking")
+    print("x, y, width, height", x, y, width, height)
+    #print("trackWindow:", track_window[0])
+    print("ret:", ret)
 
-    u_h = cv2.getTrackbarPos("UH", "Tracking")
-    u_s = cv2.getTrackbarPos("US", "Tracking")
-    u_v = cv2.getTrackbarPos("UV", "Tracking")
 
-    l_b = np.array([l_h, l_s, l_v])
-    u_b = np.array([u_h, u_s, u_v])
+    pts = cv2.boxPoints(ret)
+    pts = np.int0(pts)
+    cv2.polylines(frame, [pts], True, (0, 255, 0), 2)
 
-    mask = cv2.inRange(hsv, l_b, u_b)
-
-    res = cv2.bitwise_and(frame, frame, mask=mask)
-    redPixels = np.argwhere(mask)
-    for px, py in redPixels:
-        cv2.rectangle(frame, (py, px), (py, px), (0, 255, 0), 0)
-    #cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0))
-
-    cv2.imshow("frame", frame)
     cv2.imshow("mask", mask)
-    cv2.imshow("res", res)
+    cv2.imshow("Frame", frame)
 
     key = cv2.waitKey(30)
     if key == 27:
+        break
+    if key == 32:
+        cv2.waitKey(0)
+    elif key == ord('q'):
         break
 
 cap.release()
