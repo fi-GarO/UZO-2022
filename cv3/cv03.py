@@ -24,6 +24,10 @@ def resizeImg(value, img):
     print('Resized Dimensions : ', resize.shape)
     return resize
 
+def rotation(value, img):
+    #https://stackoverflow.com/questions/52617318/python-rotate-image-without-using-the-built-in-methods-for-rotation
+    return 0
+
 if __name__ == "__main__":
     img = cv2.imread('/home/garo/Desktop/UZO-2022/cv3/cv03_robot.bmp')
     resize = resizeImg(300000, img)
