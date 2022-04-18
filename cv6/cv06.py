@@ -1,96 +1,135 @@
 import numpy as np
 from scipy import ndimage
 import matplotlib.pyplot as plt
-import os
 import cv2
+from PIL import Image, ImageOps
 
-def plot_histograms(sortedData, files):
-    _, axs = plt.subplots(9, 9)
-    for i in range(len(sortedData)):
-        for j in range(len(sortedData)): 
-            image = cv2.cvtColor(cv2.imread(files[sortedData[i][j]]), cv2.COLOR_BGR2RGB)
-            axs[i][j].imshow(image)
+def plot(filtr, spectrumFiltr, imgSpectrum, file, name):
+    _, axs = plt.subplots(2, 2)
 
-def amplitudeSpectrum(data, files):
-    fig1, axs = plt.subplots(len(data), 3)
+    img = cv2.imread(file)
 
-    for file in files:
-        i = 0
+    axs[0, 0].set_title('Original')
+    axs[0, 0].imshow(img)
 
-        img = cv2.imread(file, 0)
-        signalFFT = np.fft.fft2(img)
-        fshift = np.fft.fftshift(signalFFT)
-        magnitude_spectrum = 20*np.log(np.abs(fshift))  
-        img = cv2.imread(file)
+    axs[0, 1].set_title('Spectrum: Original')
+    axs[0, 1].imshow(imgSpectrum)
 
-        while i != len(data):
-            axs[i, 0].set_title('Median - před')
-            axs[i, 0].imshow(img)
+    axs[1, 0].set_title(name)
+    axs[1, 0].imshow(filtr)   
 
-            axs[i, 1].set_title('Median - po')
-            axs[i, 1].imshow(data[i])
+    axs[1, 1].set_title("Spectrum: " + name)
+    axs[1, 1].imshow(spectrumFiltr)   
 
-            axs[i, 2].set_title('Median - spectrum')
-            axs[i, 2].imshow(magnitude_spectrum)
+def spectrum(data, file, name):
+    
+    img = cv2.imread(file, 0)
 
-            i = i+1 
+    signalFFT = np.fft.fft2(img)
+    fshift = np.fft.fftshift(signalFFT)
+    spectrumImg = 20*np.log(np.abs(fshift))  
 
-    plt.figure()
-        
+    img2 = Image.fromarray(data)
+    img2 = ImageOps.grayscale(img2)
 
-    #plt.imshow(magnitude_spectrum)
+    signalFFT = np.fft.fft2(img2)
+    fshift = np.fft.fftshift(signalFFT)
+    spectrumFiltr = 20*np.log(np.abs(fshift)) 
+
+    plot(data, spectrumFiltr, spectrumImg, file, name)
     return 0
 
-def laplace(files):
+def laplace(file):
+    src = cv2.imread(file)
+    src_gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
 
-    
-    for file in files:
-      print(file)
-      src = cv2.imread(file)
-      src = cv2.GaussianBlur(src, (3, 3), 0)
-      src_gray = cv2.cvtColor(src, cv2.COLOR_BGR2GRAY)
-      dst = cv2.Laplacian(src_gray, cv2.CV_16S, ksize=3)
-      abs_dst = cv2.convertScaleAbs(dst)
-      cv2.imshow("laplace", abs_dst)
+    src = cv2.GaussianBlur(src_gray, (3, 3), 0)
+    laplace = cv2.Laplacian(src_gray, cv2.CV_64F)
+    return laplace
         
-def sobel(files):
-    filter = np.array([[-1, 0, 1], [-2, 0, 2], [-1, 0, 1]])
+def sobel(file):
+    img = cv2.imread(file)
 
-    for file in files:
-      print(file)
-      src = cv2.imread(file)
-      src = cv2.GaussianBlur(src, (3, 3), 0)
-      conv = np.convolve(src, filter)
-      gradient_magnitude = np.sqrt(np.square(conv) + np.square(conv))
- 
-      gradient_magnitude *= 255.0 / gradient_magnitude.max()
-      cv2.imshow("sobel", gradient_magnitude)
-    
-        
+    edge_x = cv2.Sobel(img,cv2.CV_64F,1,0,ksize=3)
+    edge_y = cv2.Sobel(img,cv2.CV_64F,0,1,ksize=3)    
 
-def kirsch(files):
-    filter = np.array([[5, 5, 5], [-3, 0, -3], [-3, -3, -3]])
-    for file in files:
-        src = cv2.imread(file)
+    abs_grad_x = cv2.convertScaleAbs(edge_x)
+    abs_grad_y = cv2.convertScaleAbs(edge_y)
+    sobel = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+    print(type(sobel))
+    return sobel
+            
 
-    
-def loadFiles(folder):
-    files = list()
-    for file in os.listdir(folder):
-        file = os.path.join(folder, file)
-        files.append(file)
+def kirsch(file):
+    img = cv2.imread(file)
+    fg_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    gray = cv2.cvtColor(fg_rgb, cv2.COLOR_RGB2GRAY)  
+    kernelG1 = np.array([[ 5,  5,  5],
+                         [-3,  0, -3],
+                         [-3, -3, -3]], dtype=np.float32)
+    kernelG2 = np.array([[ 5,  5, -3],
+                         [ 5,  0, -3],
+                         [-3, -3, -3]], dtype=np.float32)
+    kernelG3 = np.array([[ 5, -3, -3],
+                         [ 5,  0, -3],
+                         [ 5, -3, -3]], dtype=np.float32)
+    kernelG4 = np.array([[-3, -3, -3],
+                         [ 5,  0, -3],
+                         [ 5,  5, -3]], dtype=np.float32)
+    kernelG5 = np.array([[-3, -3, -3],
+                         [-3,  0, -3],
+                         [ 5,  5,  5]], dtype=np.float32)
+    kernelG6 = np.array([[-3, -3, -3],
+                         [-3,  0,  5],
+                         [-3,  5,  5]], dtype=np.float32)
+    kernelG7 = np.array([[-3, -3,  5],
+                         [-3,  0,  5],
+                         [-3, -3,  5]], dtype=np.float32)
+    kernelG8 = np.array([[-3,  5,  5],
+                         [-3,  0,  5],
+                         [-3, -3, -3]], dtype=np.float32)
 
-    return files
+    g1 = cv2.normalize(cv2.filter2D(gray, cv2.CV_32F, kernelG1), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    g2 = cv2.normalize(cv2.filter2D(gray, cv2.CV_32F, kernelG2), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    g3 = cv2.normalize(cv2.filter2D(gray, cv2.CV_32F, kernelG3), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    g4 = cv2.normalize(cv2.filter2D(gray, cv2.CV_32F, kernelG4), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    g5 = cv2.normalize(cv2.filter2D(gray, cv2.CV_32F, kernelG5), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    g6 = cv2.normalize(cv2.filter2D(gray, cv2.CV_32F, kernelG6), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    g7 = cv2.normalize(cv2.filter2D(gray, cv2.CV_32F, kernelG7), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    g8 = cv2.normalize(cv2.filter2D(gray, cv2.CV_32F, kernelG8), None, 0, 255, cv2.NORM_MINMAX, cv2.CV_8UC1)
+    magn = cv2.max(
+        g1, cv2.max(
+            g2, cv2.max(
+                g3, cv2.max(
+                    g4, cv2.max(
+                        g5, cv2.max(
+                            g6, cv2.max(
+                                g7, g8
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+    return magn
 
 if __name__ == '__main__':
-    files = loadFiles("images")
-    print(files)
-    l = laplace(files)
-    s = sobel(files)
-    k = kirsch(files)  
-    cv2.waitKey(0) 
+    file = "/home/garo/Desktop/UZO-2022/cv6/images/cv06_robotC.bmp"
+
+    name = "Laplace"
+    l = laplace(file)
+    spectrum(l, file, name)
+
+    name = "Sobel"
+    s = sobel(file)
+    spectrum(s, file, name)
 
 
+    name = "Kirsch"
+    k = kirsch(file) 
+    spectrum(k, file, name)
+    
     plt.show()
     
     
