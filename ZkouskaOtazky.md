@@ -6,12 +6,35 @@
 
 
 # cv5 - Filtrace šumu
+## Průměrování
+![noiseMean](https://user-images.githubusercontent.com/46580540/170126797-5fb00d81-fc9d-4bd7-b9d1-f40bca73eee5.png)
+
+## Median
+![noiseMedian](https://user-images.githubusercontent.com/46580540/170126929-c293b391-24ca-4440-a436-8757b9024f42.png)
+
 ## Rotující maska
 - oprava velkoplošných chyb bez vlivu na zbytek obrazu,
 jednoduché vyhlazení bez poškození hran. 
+![noiseRotatingMask](https://user-images.githubusercontent.com/46580540/170127841-a8279db1-245d-4d6a-bab2-244baa9a7480.png)
+
+
 # cv6 - Hranové detektory
+
+## Laplace
+![edgeLaplace](https://user-images.githubusercontent.com/46580540/170127195-00a7f442-df3a-4be2-acb7-eb06190de464.png)
+
+## Sobel
+![noiseSobel](https://user-images.githubusercontent.com/46580540/170127371-78bb18a5-8eea-446d-afab-e8150f97c3bb.png)
+
+## Canny
+- nejprve potřeba redukovat noise
+![edgesCanny](https://user-images.githubusercontent.com/46580540/170128042-eb72fb74-d3a4-4fee-a6cb-cd6975bbdc59.png)
+
+
 # cv7 - Segmentace
+
 # cv8 - Morfologické operace -> bin obraz
+https://docs.opencv.org/4.x/d9/d61/tutorial_py_morphological_ops.html
 ## Dilatace 
 - samostatně k zaplnění malých děr, úzkých zálivů a pro další
 složitější operace, zvětšuje objekty, pro zachování původních rozměrů >>>
